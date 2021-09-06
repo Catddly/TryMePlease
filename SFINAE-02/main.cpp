@@ -17,10 +17,10 @@ constexpr T StripBoxedType(BoxedType<T>);
 //! Generic lambda.
 //! Used to SFINAE out.
 template <typename LambdaFunc, typename... Args, typename = decltype(std::declval<LambdaFunc>()(std::declval<Args&&>()...))> // try to call LambdaFunc(Args... args)
-std::true_type is_implemented(void*); // accept any pointer
+std::true_type  is_implemented(void*); // accept any pointer
 
 template <typename LambdaFunc, typename... Args>
-std::false_type is_implemented(...); // this function can have any parameters
+std::false_type is_implemented(...);  // this function can have any parameters
 
 //template <typename Func>
 //constexpr auto IsValid(Func&& lambda_instance)
@@ -33,21 +33,26 @@ std::false_type is_implemented(...); // this function can have any parameters
 
 // try to call is_implemented(void*) first, if failed, fallback to is_implemented(...)
 // this will return true_type or false_type depend on if is_implemented() is SFINAE out
-constexpr auto func_is_valid = [](auto lambda_instance)
+constexpr auto func_is_valid = [](auto lambda_instance) // lambda_instance is function body
 {
-	return [](auto&&... args)
+	return [](auto&&... args) // args are the parameters of lambda_instance
 	{
 		// we want to return a true_type.
+		// we pass in the nullptr to let the compilers to try is_implemented(void*) first due to
+		// the Optimal Selection Principle, if is_implemented(void*) be SFINAE out,
+		// then the compiler will try is_implemented(...)
 		return decltype(is_implemented<decltype(lambda_instance), decltype(args)&&...>(nullptr)){};
 	};
 };
 
 // use this function to test what we want, in this case we test if type T can call T()
 // if this failed, type Func in IsValid() will be SFINAE out.
-constexpr auto func_is_default_constructible = [](auto boxed_instance) -> decltype(decltype( StripBoxedType(boxed_instance) )() /* here we call the default constructor to test */)
+// decltype( StripBoxedType(boxed_instance) )() equals to T()
+constexpr auto func_is_default_constructible = [](auto boxed_instance) -> decltype( decltype( StripBoxedType(boxed_instance) )() /* here we call the default constructor to test */)
 {};
 
-constexpr auto func_can_accept_int = [](auto boxed_instance) -> decltype(decltype(StripBoxedType(boxed_instance))(4))
+// decltype( StripBoxedType(boxed_instance) )(4) equals to T(4)
+constexpr auto func_can_accept_int = [](auto boxed_instance) -> decltype( decltype( StripBoxedType(boxed_instance) )(4) )
 {};
 
 // combine the test function with SFINAE function.
