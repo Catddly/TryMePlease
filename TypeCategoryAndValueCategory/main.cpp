@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string>
+#include <type_traits>
 
 ////////////////////////////////////////////////////////////////////////////////////
 /// 
@@ -69,6 +70,21 @@ std::string TypeToString()
 
 #define TypeCategory(VALUE)  TypeToString<decltype(VALUE)>().c_str()
 #define ValueCategory(VALUE) TypeToString<decltype((VALUE))>().c_str()
+
+template <typename T>
+constexpr bool is_lvalue_v = std::is_lvalue_reference_v<T>;
+
+template <typename T>
+constexpr bool is_xvalue_v = std::is_rvalue_reference_v<T>;
+
+template <typename T>
+constexpr bool is_glvalue_v = std::is_lvalue_v<T> || is_xvalue_v<T>;
+
+template <typename T>
+constexpr bool is_prvalue_v = !(std::is_lvalue_v<T> || is_xvalue_v<T>);
+
+template <typename T>
+constexpr bool is_rvalue_v = is_prvalue_v<T> || is_xvalue_v<T>;
 
 int main()
 {
